@@ -1,0 +1,11 @@
+---
+- name: simple playbook
+  hosts: dnsprimtest
+  become: yes
+
+  tasks:
+    - name: installing mlocate
+      yum:
+        name: mlocate
+        state: present
+      
