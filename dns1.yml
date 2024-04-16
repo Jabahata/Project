@@ -1,6 +1,6 @@
 ---
 - name: dns1 role
-  hosts: dns1test
+  hosts: dns1
   become: yes
 
   roles:
