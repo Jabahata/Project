@@ -10,6 +10,7 @@ $TTL 1D
                         IN      NS          prdx-nsprimary201.ziyotek2.local.
                         IN      NS          prdx-nsworker201.ziyotek2.local.
                         IN      NS          prdx-nsworker202.ziyotek2.local.
+
 ; A records
 prdx-ansible201         IN      A           192.168.162.15
 prdx-ldap201            IN      A           192.168.162.16
@@ -18,7 +19,7 @@ prdx-nsprimary201       IN      A           192.168.162.20
 prdx-nsworker201        IN      A           192.168.162.21
 prdx-nsworker202        IN      A           192.168.162.22
 prdx-ntp201             IN      A           192.168.162.23
-prdx-ntp202             IN      A           192.168.162.23
+prdx-ntp202             IN      A           192.168.162.24
 
 prdx-db201              IN      A           192.168.162.30
 prdx-webserver201       IN      A           192.168.162.31

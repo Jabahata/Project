@@ -18,6 +18,12 @@
     name: bind
     state: present
 
+- name: starting named
+  service:
+    name: named
+    state: started
+    enabled: yes
+
 - name: configuring named.conf
   template:
     src: namedconf.j2
@@ -39,3 +45,14 @@
     owner: root
     group: named
     mode: '0640'
+
+- name: restarting named
+  service:
+    name: named
+    state: restarted
+
+- name: configuring resolv.conf
+  template:
+    src: resolvconf.j2
+    dest: /etc/resolv.conf
+  notify: restart network
