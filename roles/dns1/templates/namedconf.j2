@@ -19,7 +19,7 @@ options {
         recursing-file  "/var/named/data/named.recursing";
         secroots-file   "/var/named/data/named.secroots";
         allow-query     { localhost; 192.168.162.0/24; };
-        allow-transfer  { localhost; 192.168.162.21 192.168.162.22; };
+        allow-transfer  { localhost; 192.168.162.21; 192.168.162.22; };
         also-notify     { 192.168.162.21; 192.168.162.22; };
 
         /*

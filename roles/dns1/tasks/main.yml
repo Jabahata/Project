@@ -18,12 +18,6 @@
     name: bind
     state: present
 
-- name: starting named
-  service:
-    name: named
-    state: started
-    enabled: yes
-
 - name: configuring named.conf
   template:
     src: namedconf.j2
@@ -45,6 +39,12 @@
     owner: root
     group: named
     mode: '0640'
+
+- name: starting named
+  service:
+    name: named
+    state: started
+    enabled: yes
 
 - name: restarting named
   service:
