@@ -4,4 +4,4 @@
   become: yes
 
   roles:
-  - dns1test
+  - dns1

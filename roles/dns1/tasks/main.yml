@@ -24,4 +24,18 @@
     dest: /etc/named.conf
     backup: yes
 
-- name: 
+- name: creating and configuring ziyotek.flz file
+  copy:
+    src: ziyotek.flz
+    dest: /var/named/ziyotek.flz
+    owner: root
+    group: named
+    mode: '0640'
+
+- name: creating and configuring ziyotek.rlz file
+  copy:
+    src: ziyotek.rlz
+    dest: /var/named/ziyotek.rlz
+    owner: root
+    group: named
+    mode: '0640'
