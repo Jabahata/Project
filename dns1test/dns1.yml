@@ -1,7 +1,0 @@
----
-- name: dns1 role
-  hosts: dns1test
-  become: yes
-
-  roles:
-  - dns1test
