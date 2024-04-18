@@ -1,0 +1,28 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing necessary packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - openldap
+    - 'openldap-clients'
+    - 'openldap-servers'
+    - openssl
+    - httpd
+
+- name: starting and enabling slapd
+  service:
+    name: slapd
+    state: started
+    enabled: yes
+
+- name: 
