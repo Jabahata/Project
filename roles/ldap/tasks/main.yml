@@ -204,6 +204,11 @@
 - name: adding modify_user.ldif for LDAP recognition
   shell: ldapmodify -x -W -D "cn=admin,dc=ziyotek2,dc=local" -f modify_user.ldif
 
+- name: restart slapd service
+  service:
+    name: slapd
+    state: restarted
+
 - name: searching for user adam within LDAP
   shell: ldapsearch -x -LLL -b "dc=ziyotek2,dc=local" "(uid=adam)"
   register: result
