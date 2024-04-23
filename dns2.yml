@@ -1,5 +1,5 @@
 ---
-- name: dns secondary 1
+- name: dns2
   hosts: dns2
   become: yes
 
