@@ -55,4 +55,3 @@
   template:
     src: resolvconf.j2
     dest: /etc/resolv.conf
-  notify: restart network
