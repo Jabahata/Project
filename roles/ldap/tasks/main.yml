@@ -27,7 +27,7 @@
 
 - name: checking if the LDAP password has already been set
   stat:
-    path: /etc/ldap_password_set.flag
+    path: /etc/ldap_password_set
   register: flag
 
 - name: generate password if not generated yet
@@ -36,16 +36,21 @@
   changed_when: False
   when: not flag.stat.exists
 
+- name: create file for password check
+  shell: touch /etc/ldap_password_set
+
 - name: creating hdb.ldif file
-  copy:
-    src: hdb.ldif
+  template:
+    src: hdbldif.j2
     dest: /home/ansible/hdb.ldif
     owner: root
     group: root
     mode: '0644'
+  when: not flag.stat.exists
 
 - name: adding hdb.ldif for LDAP recognition
   shell: ldapmodify -Y EXTERNAL -H ldapi:/// -f hdb.ldif
+  when: not flag.stat.exists
 
 - name: creating monitor.ldif
   copy:
@@ -56,7 +61,7 @@
     mode: '0644'
 
 - name: adding monitor.ldif for LDAP recognition
-  shell: ldapmodify -Y EXTERNAL -H ldapi:/// -f monitor.ldif 
+  shell: ldapmodify -Y EXTERNAL -H ldapi:/// -f monitor.ldif
 
 - name: ensuring directory for certificates exists
   file:
@@ -64,12 +69,16 @@
     state: directory
     mode: '0755'
 
-- name: generating an RSA private key # CA.key
+- name: checking if CA key is already created
+  stat:
+    path: "{{ certs_dir }}/CA.key"
+  register: cakey
+
+- name: generating CA key
   openssl_privatekey:
     path: "{{ certs_dir }}/CA.key"
-    size: 2048 # bits
-  when: not ansible.builtin.stat:
-    path: "{{ cert_dir }}/CA.key"
+    size: 2048
+  when: not cakey.stat.exists
   register: ca_key
 
 - name: generating a self signed certificate for CA.key
@@ -90,12 +99,16 @@
     csr_email_address: "admin@ziyotek.com"
   when: ca_key is changed
 
+- name: checking if ldap key exists
+  stat:
+    path: "{{ cert_dir }}/ldap.key"
+  register: ldap_key1
+
 - name: generating RSA private key for LDAP server
   openssl_privatekey:
     path: "{{ certs_dir }}/ldap.key"
     size: 2048
-  when: not ansible.builtin.stat:
-    path: "{{ cert_dir }}/ldap.key"
+  when: not ldap_key1.stat.exists
   register: ldap_key
 
 - name: generating CSR for LDAP server
@@ -120,12 +133,11 @@
     provider: ownca
     ownca_not_after: "+1460d"
     ownca_not_before: "0d"
-  when: ldap_key is changed and not ansible.builtin.stat:
-    path: "{{ cert_dir }}/ldap.crt"
+  when: ldap_key is changed
 
 - name: creating key.ldif and setting up keys
-  copy:
-    src: key.ldif
+  template:
+    src: keyldif.j2
     dest: /home/ansible/key.ldif
     owner: root
     group: root

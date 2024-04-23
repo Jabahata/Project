@@ -1,2 +1,2 @@
 ---
-certs_dir: "{{ /etc/openldap/certs }}"
+certs_dir: /etc/openldap/certs

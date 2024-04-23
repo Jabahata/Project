@@ -1,5 +1,5 @@
 ---
-- name: dns1 role
+- name: dns primary
   hosts: dns1
   become: yes
 

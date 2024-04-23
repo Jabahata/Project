@@ -1,0 +1,7 @@
+---
+- name: dns secondary 1
+  hosts: dns2
+  become: yes
+
+  roles:
+  - dns2
