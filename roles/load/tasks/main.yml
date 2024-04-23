@@ -1,0 +1,46 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing haproxy
+  yum:
+    name: haproxy
+    state: present
+
+- name: starting and enabling haproxy
+  service:
+    name: haproxy
+    state: started
+    enabled: yes
+
+- name: configuring haproxy.cfg
+  template:
+    src: haproxycfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    backup: yes
+
+- name: restarting haproxy
+  service:
+    name: haproxy
+    state: restarted
+
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
