@@ -1,0 +1,93 @@
+---
+- name: making new MariaDB.repo repository
+  copy:
+    src: MariaDB.repo
+    dest: /etc/yum.repos.d/MariaDB.repo
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: installing MariaDB packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - MariaDB-server
+    - MariaDB-client
+
+- name: starting and enabling MariaDB service
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Set root user password
+  mysql_user:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    user: root
+    password: "password"
+    host: localhost
+    state: present
+  no_log: true
+
+## Codes below is to make GUI version of DB
+
+- name: installing httpd
+  yum:
+    name: httpd
+    state: present
+
+- name: starting and enabling httpd
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: installing phpadmin for GUI
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - php
+    - phpadmin
+
+- name: configuring phpMyAdmin.conf
+  template:
+    src: phpmyadminconf.j2
+    dest: /etc/httpd/conf.d/phpMyAdmin.conf
+    backup: yes
+
+- name: restarting httpd
+  service:
+    name: httpd
+    state: restarted
+
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
