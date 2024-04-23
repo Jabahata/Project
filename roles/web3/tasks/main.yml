@@ -1,0 +1,67 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing apache
+  yum:
+    name: httpd
+    state: present
+
+- name: starting and enabling httpd
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: ensuring that /var/www/html/style directory exists
+  file:
+    path: /var/www/html/style
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: copying graphical files
+  copy:
+    src: "{{ item }}"
+    dest: /var/www/html/style
+    owner: root
+    group: root
+    mode: '0644'
+  with_fileglob:
+    - /home/ansible/project/roles/web3/graphical/*
+
+- name: copying html files
+  copy:
+    src: "{{ item }}"
+    dest: /var/www/html
+    owner: root
+    group: root
+  with_fileglob:
+    - /home/ansible/project/roles/web3/html/*
+
+- name: restarting httpd
+  service:
+    name: httpd
+    state: restarted
+
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
