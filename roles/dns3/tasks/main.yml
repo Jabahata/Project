@@ -1,0 +1,47 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+    
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: installing bind
+  yum:
+    name: bind
+    state: present
+
+- name: configuring /etc/named.conf
+  template:
+    src: namedconf.j2
+    dest: /etc/named.conf
+    backup: yes
+
+- name: starting named
+  service:
+    name: named
+    state: started
+    enabled: yes
+
+- name: Reload ziyotek2.local zone
+  command: rndc reload ziyotek2.local
+
+- name: Reload 162.168.192.in-addr.arpa zone
+  command: rndc reload 162.168.192.in-addr.arpa
+
+- name: restarting named
+  service:
+    name: named
+    state: restarted
+
+- name: configuring resolv.conf
+  template:
+    src: resolvconf.j2
+    dest: /etc/resolv.conf
