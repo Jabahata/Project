@@ -7,4 +7,4 @@ replace: olcRootDN
 olcRootDN: cn=admin,dc=ziyotek2,dc=local
 -
 add: olcRootPW
-olcRootPW: {{ slappasswd_output.stdout }}
+olcRootPW: "{{ slappasswd_output.stdout }}"
