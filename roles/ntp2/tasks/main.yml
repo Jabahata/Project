@@ -1,0 +1,35 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing chrony
+  yum:
+    name: chrony
+    state: present
+
+- name: configuring /etc/chrony.conf
+  template:
+    src: chrony.j2
+    dest: /etc/chrony.conf
+
+- name: starting chrony service
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+
+- name: restarting chrony service
+  service:
+    name: chronyd
+    state: restarted
+
+- name: configuring resolv.conf
+  template:
+    src: resolvconf.j2
+    dest: /etc/resolv.conf
