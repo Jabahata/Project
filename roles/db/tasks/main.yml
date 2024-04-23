@@ -43,7 +43,6 @@
     password: "password"
     host: localhost
     state: present
-  no_log: true
 
 ## Codes below is to make GUI version of DB
 
