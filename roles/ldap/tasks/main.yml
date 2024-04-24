@@ -207,6 +207,44 @@
   debug:
     msg: "{{ result.stdout }}"
 
+## codes below to make LDAP GUI
+
+- name: installing epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: installing phpldapadmin and httpd
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - phpldapadmin
+    - httpd
+
+- name: starting and enabling httpd
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: configuring config.php for ldapadmin
+  template:
+    src: configphp.j2
+    dest: /etc/phpldapadmin/config.php
+    backup: yes
+
+- name: configuring phpldapadmin.conf for httpd
+  template:
+    src: phpldapadminconf.j2
+    dest: /etc/httpd/conf.d/phpldapadmin.conf
+    backup: yes
+
+- name: restarting httpd
+  service:
+    name: httpd
+    state: restarted
+
 - name: getting uuid of network
   command: nmcli -g uuid con show
   register: uuid_result
