@@ -100,11 +100,18 @@
     cd /etc/openldap/certs && openssl req -new -key ldap.key -out ldap.csr \
     -subj "/C=US/ST=Virginia/L=Vienna/O=Ziyotek/OU=IT/CN=prdx-ldap201.ziyotek2.local/emailAddress=admin@ziyotek.com"
   when: ldap1_key is changed
-  register: ldap2_key
+  register: key_creation_result
 
 - name: signing certificate
-  shell: cd /etc/openldap/certs && openssl x509 -req -in ldap.csr -CA CA.crt -CAkey CA.key -CAcreateserial -out ldap.crt -days 1460 -sha256
-  when: not ldap2_key.stat.exists
+  shell: |
+    cd /etc/openldap/certs && \
+    openssl x509 -req -in ldap.csr \
+    -CA CA.crt \
+    -CAkey CA.key \
+    -CAcreateserial \
+    -out ldap.crt \
+    -days 1460 -sha256
+  when: key_creation_result is changed
 
 - name: creating key.ldif and setting up keys
   template:
