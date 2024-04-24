@@ -29,6 +29,14 @@
     - MariaDB-server
     - MariaDB-client
 
+- name: installing python2 and mysql-python for mysql
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - python
+    - MySQL-python
+
 - name: starting and enabling MariaDB service
   service:
     name: mariadb
@@ -38,7 +46,7 @@
 - name: Set root user password
   mysql_user:
     login_user: root
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_unix_socket: /var/lib/mysql/mysql.sock
     user: root
     password: "password"
     host: localhost
@@ -63,7 +71,7 @@
     state: present
   loop:
     - php
-    - phpadmin
+    - phpMyAdmin
 
 - name: configuring phpMyAdmin.conf
   template:
