@@ -1,7 +1,0 @@
----
-- name: dock1
-  hosts: dock1
-  become: yes
-
-  roles:
-  - dock1
