@@ -1,0 +1,6 @@
+---
+- name: Install and configure Docker
+  hosts: dock1
+  become: yes
+  roles:
+    - dock-master
