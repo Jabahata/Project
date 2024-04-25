@@ -1,0 +1,56 @@
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: Remove existing Docker packages
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - docker
+    - docker-common
+    - docker-selinux
+    - docker-engine-selinux
+    - docker-engine
+    - docker-ce
+  ignore_errors: yes
+
+- name: Install required packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+
+- name: Add Docker repository
+  command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: Install Docker CE
+  yum:
+    name: docker-ce
+    state: present
+    enablerepo: docker-ce-nightly
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Install packages on Docker master node
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - httpd
+    - php
+    - mysql
+    - php-mysql
+  notify: restart service
