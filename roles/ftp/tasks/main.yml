@@ -1,0 +1,54 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing vsftpd
+  yum:
+    name: vsftpd
+    state: present
+
+- name: starting and enabling vsftpd service
+  service:
+    name: vsftpd
+    state: started
+    enabled: yes
+
+- name: adding local user ftpuser
+  user:
+    name: ftpuser
+    password: "{{ user_password | password_hash('sha512', 'A5aNewSalt') }}"
+    shell: /bin/bash
+    home: /home/users/ftpuser
+    createhome: yes
+
+- name: configuring /etc/vsftpd/vsftpd.conf
+  template:
+    src: vsftpdconf.j2
+    dest: /etc/vsftpd/vsftpd.conf
+    backup: yes
+
+- name: restarting vsftpd service
+  service:
+    name: vsftpd
+    state: restarted
+
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
