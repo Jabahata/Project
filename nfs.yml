@@ -1,0 +1,7 @@
+---
+- name: nfs
+  hosts: nfs
+  become: yes
+
+  roles:
+  - nfs

@@ -1,0 +1,88 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing nfs packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nfs-utils
+    - nfs-utils-lib
+    - rpcbind
+
+- name: starting and enabling services
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - rpcbind
+    - nfs-server
+    - nfs-lock
+    - nfs-idmap
+
+- name: creating shared directory
+  file:
+    path: /var/nfs/shared
+    state: directory
+    owner: nfsnobody
+    group: nfsnobody
+    mode: '0755'
+
+## codes below for autofs for ldap homes
+
+- name: installing autofs
+  yum:
+    name: autofs
+    state: present
+
+- name: starting and enabling autofs
+  service:
+    name: autofs
+    state: started
+    enabled: yes
+
+- name: creating autofs directory
+  file:
+    path: /var/nfs/autofs
+    state: directory
+    owner: nfsnobody
+    group: nfsnobody
+    mode: '0755'
+
+- name: configuring /etc/exports
+  copy:
+    src: exports
+    dest: /etc/exports
+
+- name: restarting nfs-server
+  service:
+    name: nfs-server
+    state: restarted
+
+- name: restarting autofs service
+  service:
+    name: autofs
+    state: restarted
+    
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
