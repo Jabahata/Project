@@ -55,7 +55,7 @@
     mode: '0755'
 
 - name: setting dns resolution for npm install
-  templates:
+  template:
     src: daemonjson.j2
     dest: /etc/docker/daemon.json
 
