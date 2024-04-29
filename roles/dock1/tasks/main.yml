@@ -54,6 +54,16 @@
     state: directory
     mode: '0755'
 
+- name: setting dns resolution for npm install
+  templates:
+    src: daemonjson.j2
+    dest: /etc/docker/daemon.json
+
+- name: restarting docker service
+  service:
+    name: docker
+    state: restarted
+
 - name: copying api files for image
   copy:
     src: "{{ item }}"
