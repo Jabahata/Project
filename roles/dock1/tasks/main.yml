@@ -57,7 +57,7 @@
 - name: copying api files for image
   copy:
     src: "{{ item }}"
-    dest: /home/ansible/api/*
+    dest: /home/ansible/api
     owner: ansible
     group: project
   with_fileglob:
