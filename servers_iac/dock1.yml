@@ -5,3 +5,4 @@
 
   roles:
   - dock1
+  - docker_swarm
