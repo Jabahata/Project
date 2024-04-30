@@ -1,0 +1,27 @@
+- name: Initialize Docker Swarm on the leader node
+  docker_swarm:
+    state: present
+    role: manager
+    advertise_addr: "{{ ansible_host }}"
+  become: yes
+  when: inventory_hostname == 'dock1'
+
+- name: Join worker nodes to the Docker Swarm
+  docker_swarm:
+    state: present
+    role: worker
+    join_token: "{{ swarm_join_token }}"
+    manager_ip: "prdx-dprimary201.ziyotek2.local"
+  become: yes
+  when: inventory_hostname in ['prdx-dworker201.ziyotek2.local', 'prdx-dworker202.ziyotek2.local']
+
+- name: Store join token for workers
+  set_fact:
+    swarm_join_token: "{{ hostvars['dock1']['docker_swarm_join_token']['worker'] }}"
+  when: inventory_hostname == 'dock1'
+
+- name: Get join token for workers
+  command: docker swarm join-token -q worker
+  register: docker_swarm_join_token
+  changed_when: false
+  when: inventory_hostname == 'dock1'
