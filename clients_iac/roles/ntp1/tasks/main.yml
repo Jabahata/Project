@@ -59,18 +59,13 @@
     group: root
     mode: '0755'
 
-- name: temporary mounting nfs to /clientshare
-  shell: mount -t nfs nfs:/var/nfs/shared /clientshare
-
-- name: modifying /etc/fstab
-  lineinfile:
-    dest: /etc/fstab
+- name: mounting NFS server to /clientshare
+  mount:
+    path: /clientshare
+    src: nfs:/var/nfs/shared
+    fstype: nfs
+    opts: defaults
     state: present
-    regexp: '^nfs'
-    line: 'nfs:/var/nfs/shared     /clientshare        nfs     rw,sync,hard,intr      0 0'
-
-- name: updating permanent mounting
-  shell: mount -a
 
 ## configuring AUTOFS for user homes
 
@@ -119,8 +114,13 @@
     group: root
     mode: '0755'
 
-- name: getting CA.crt from ldap server
-  shell: wget http://prdx-ldap201.ziyotek2.local/CA.crt
+- name: getting CA.crt from LDAP server
+  get_url:
+    url: http://prdx-ldap201.ziyotek2.local/CA.crt
+    dest: /etc/openldap/cacerts/CA.crt
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: configuring authconfig for ldap recognition
   shell: authconfig --enableldap --enableldapauth --ldapserver=ldap://prdx-ldap201.ziyotek2.local/ --ldapbasedn="dc=ziyotek2,dc=local" --enableldaptls --enableshadow --enablelocauthorize --enablemkhomedir --update
