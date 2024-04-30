@@ -1,4 +1,4 @@
-## updating all packages
+## playbook for client side of the servers
 
 - name: making cache
   yum:
@@ -15,7 +15,7 @@
   command: nmcli -g uuid con show
   register: uuid_result
 
-- name: configuring network
+- name: configuring network and DNS
   template:
     src: interface.j2
     dest: /etc/sysconfig/network-scripts/ifcfg-ens192
@@ -96,5 +96,87 @@
 - name: updating permanent mounting
   shell: mount -a
 
+## configuring AUTOFS for user homes
+
+- name: installing autofs
+  yum:
+    name: autofs
+    state: present
+
+- name: modifying /etc/auto.master
+  lineinfile:
+    dest: /etc/auto.master
+    state: present
+    regexp: '^/- /etc/auto.home --timeout 60$'
+    line: '/- /etc/auto.home --timeout 60'
+
+- name: modifying /etc/auto.home
+  copy:
+    src: auto
+    dest: /etc/auto.home
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: restarting autofs
+  service:
+    name: autofs
+    state: restarted
+
 ## configuring LDAP
 
+- name: installing necessary packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - openldap-clients
+    - nss-pam-ldapd
+    - wget
+    - authconfig
+
+- name: ensure that certs directory exists
+  file:
+    path: /etc/openldap/cacerts
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: getting CA.crt from ldap server
+  shell: wget http://prdx-ldap201.ziyotek2.local/CA.crt
+
+- name: configuring authconfig for ldap recognition
+  shell: authconfig --enableldap --enableldapauth --ldapserver=ldap://prdx-ldap201.ziyotek2.local/ --ldapbasedn="dc=ziyotek2,dc=local" --enableldaptls --enableshadow --enablelocauthorize --enablemkhomedir --update
+
+## configuring Nagios
+
+- name: installing epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: installing nagios-plugins and nrpe
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nrpe
+    - nagios-plugins-all
+
+- name: starting and enabling nrpe
+  service:
+    name: nrpe
+    state: started
+    enabled: yes
+
+- name: configuring nrpe.cfg
+  template:
+    src: nrpecfg.j2
+    dest: /etc/nagios/nrpe.cfg
+    backup: yes
+
+- name: restarting nrpe service
+  service:
+    name: nrpe
+    state: restarted
