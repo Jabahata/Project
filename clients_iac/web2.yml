@@ -1,0 +1,7 @@
+---
+- name: web2
+  hosts: web2
+  become: yes
+
+  roles:
+  - web2
