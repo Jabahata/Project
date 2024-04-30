@@ -1,0 +1,158 @@
+## playbook for client side of the servers
+
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+## configuring DNS
+
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network and DNS
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
+
+## configuring FTP
+
+- name: installing ftp
+  yum:
+    name: ftp
+    state: present
+
+## configuring NFS
+
+- name: installing nfs
+  yum:
+    name: nfs-utils
+    state: present
+
+- name: starting and enabling services
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - rpcbind
+    - nfs-server
+    - nfs-lock
+    - nfs-idmap
+
+- name: ensure that /clientshare exists
+  file:
+    path: /clientshare
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: temporary mounting nfs to /clientshare
+  shell: mount -t nfs nfs:/var/nfs/shared /clientshare
+
+- name: modifying /etc/fstab
+  lineinfile:
+    dest: /etc/fstab
+    state: present
+    regexp: '^nfs'
+    line: 'nfs:/var/nfs/shared     /clientshare        nfs     rw,sync,hard,intr      0 0'
+
+- name: updating permanent mounting
+  shell: mount -a
+
+## configuring AUTOFS for user homes
+
+- name: installing autofs
+  yum:
+    name: autofs
+    state: present
+
+- name: modifying /etc/auto.master
+  lineinfile:
+    dest: /etc/auto.master
+    state: present
+    regexp: '^/- /etc/auto.home --timeout 60$'
+    line: '/- /etc/auto.home --timeout 60'
+
+- name: modifying /etc/auto.home
+  copy:
+    src: auto
+    dest: /etc/auto.home
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: restarting autofs
+  service:
+    name: autofs
+    state: restarted
+
+## configuring LDAP
+
+- name: installing necessary packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - openldap-clients
+    - nss-pam-ldapd
+    - wget
+    - authconfig
+
+- name: ensure that certs directory exists
+  file:
+    path: /etc/openldap/cacerts
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: getting CA.crt from ldap server
+  shell: wget http://prdx-ldap201.ziyotek2.local/CA.crt
+
+- name: configuring authconfig for ldap recognition
+  shell: authconfig --enableldap --enableldapauth --ldapserver=ldap://prdx-ldap201.ziyotek2.local/ --ldapbasedn="dc=ziyotek2,dc=local" --enableldaptls --enableshadow --enablelocauthorize --enablemkhomedir --update
+
+## configuring Nagios
+
+- name: installing epel-release
+  yum:
+    name: epel-release
+    state: present
+
+- name: installing nagios-plugins and nrpe
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nrpe
+    - nagios-plugins-all
+
+- name: starting and enabling nrpe
+  service:
+    name: nrpe
+    state: started
+    enabled: yes
+
+- name: configuring nrpe.cfg
+  template:
+    src: nrpecfg.j2
+    dest: /etc/nagios/nrpe.cfg
+    backup: yes
+
+- name: restarting nrpe service
+  service:
+    name: nrpe
+    state: restarted
