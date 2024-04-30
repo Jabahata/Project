@@ -26,6 +26,30 @@
     name: network
     state: restarted
 
+## configuring NTP
+
+- name: ensure that chrony installed
+  yum:
+    name: chrony
+    state: present
+
+- name: start and enable chronyd
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+
+- name: configuring chrony
+  template:
+    src: chronyconf.j2
+    dest: /etc/chrony.conf
+    backup: yes
+
+- name: restarting chronyd
+  service:
+    name: chronyd
+    state: restarted
+
 ## configuring FTP
 
 - name: installing ftp
