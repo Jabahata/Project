@@ -1,0 +1,7 @@
+---
+- name: ntp2
+  hosts: ntp2
+  become: yes
+
+  roles:
+  - ntp2

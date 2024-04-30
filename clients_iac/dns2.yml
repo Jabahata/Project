@@ -1,0 +1,7 @@
+---
+- name: dns2
+  hosts: dns2
+  become: yes
+
+  roles:
+  - dns2
