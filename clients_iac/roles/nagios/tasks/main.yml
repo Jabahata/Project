@@ -1,0 +1,150 @@
+## playbook for client side of the servers
+
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+## configuring DNS
+
+- name: getting uuid of network
+  command: nmcli -g uuid con show
+  register: uuid_result
+
+- name: configuring network and DNS
+  template:
+    src: interface.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-ens192
+    backup: yes
+
+- name: restarting network
+  service:
+    name: network
+    state: restarted
+
+## configuring NTP
+
+- name: ensure that chrony installed
+  yum:
+    name: chrony
+    state: present
+
+- name: start and enable chronyd
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+
+- name: configuring chrony
+  template:
+    src: chronyconf.j2
+    dest: /etc/chrony.conf
+    backup: yes
+
+- name: restarting chronyd
+  service:
+    name: chronyd
+    state: restarted
+
+## configuring FTP
+
+- name: installing ftp
+  yum:
+    name: ftp
+    state: present
+
+## configuring NFS
+
+- name: installing nfs
+  yum:
+    name: nfs-utils
+    state: present
+
+- name: starting and enabling services
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - rpcbind
+    - nfs-server
+    - nfs-lock
+    - nfs-idmap
+
+- name: ensure that /clientshare exists
+  file:
+    path: /clientshare
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: mounting NFS server to /clientshare
+  mount:
+    path: /clientshare
+    src: nfs:/var/nfs/shared
+    fstype: nfs
+    opts: defaults
+    state: present
+
+## configuring AUTOFS for user homes
+
+- name: installing autofs
+  yum:
+    name: autofs
+    state: present
+
+- name: modifying /etc/auto.master
+  lineinfile:
+    dest: /etc/auto.master
+    state: present
+    regexp: '^/- /etc/auto.home --timeout 60$'
+    line: '/- /etc/auto.home --timeout 60'
+
+- name: modifying /etc/auto.home
+  copy:
+    src: auto
+    dest: /etc/auto.home
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: restarting autofs
+  service:
+    name: autofs
+    state: restarted
+
+## configuring LDAP
+
+- name: installing necessary packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - openldap-clients
+    - nss-pam-ldapd
+    - wget
+    - authconfig
+
+- name: ensure that certs directory exists
+  file:
+    path: /etc/openldap/cacerts
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: getting CA.crt from LDAP server
+  get_url:
+    url: http://prdx-ldap201.ziyotek2.local/CA.crt
+    dest: /etc/openldap/cacerts/CA.crt
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: configuring authconfig for ldap recognition
+  shell: authconfig --enableldap --enableldapauth --ldapserver=ldap://prdx-ldap201.ziyotek2.local/ --ldapbasedn="dc=ziyotek2,dc=local" --enableldaptls --enableshadow --enablelocauthorize --enablemkhomedir --update
