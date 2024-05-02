@@ -1,0 +1,7 @@
+---
+- name: dockers
+  hosts: dockers
+  become: yes
+
+  roles:
+  - dockers

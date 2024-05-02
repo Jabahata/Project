@@ -1,0 +1,82 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing required packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+
+- name: adding repo for docker-ce
+  shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: installing docker-ce
+  yum:
+    name: docker-ce
+    state: present
+
+- name: starting and enabling docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: setting dns resolution for npm install and live-restore for swarm
+  template:
+    src: daemonjson.j2
+    dest: /etc/docker/daemon.json
+
+- name: restarting docker service
+  service:
+    name: docker
+    state: restarted
+
+- name: docker swarm config
+  shell: docker swarm init --advertise-addr 192.168.162.50
+  when: inventory_hostname == "prdx-dprimary201.ziyotek2.local"
+
+- name: docker token register
+  shell: docker swarm join-token worker -q
+  when: inventory_hostname == "prdx-dprimary201.ziyotek2.local"
+  register: token
+
+- name: setting docker workers
+  shell: docker swarm join --token "{{ token.stdout }}" 192.168.162.50:2377
+  when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
+
+## codes below for building image and running docker container
+
+- name: ensuring directory for api exists
+  file:
+    path: /home/ansible/api
+    state: directory
+    mode: '0755'
+  when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
+
+- name: copying api files for image
+  copy:
+    src: "{{ item }}"
+    dest: /home/ansible/api
+    owner: ansible
+    group: project
+  with_fileglob:
+    - /home/ansible/project/roles/dock1/files/*
+  when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
+
+- name: building image from Dockerfile
+  shell: docker build -t myapp /home/ansible/api/
+  when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
+
+- name: running a container on port 4000
+  shell: docker run --name mycon1 -p 4000:4000 -d myapp
+  when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
