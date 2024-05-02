@@ -121,6 +121,9 @@
     opts: defaults
     state: present
 
+- name: persistent mounting
+  shell: mount -a
+
 ## configuring AUTOFS for user homes
 
 - name: installing autofs
