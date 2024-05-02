@@ -31,25 +31,25 @@
 - name: getting nagioscore from github
   get_url:
     url: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.5.tar.gz
-    dest: /tmp/nagios-4.4.5.tar.gz
+    dest: /home/ansible/nagios-4.4.5.tar.gz
     owner: root
     group: root
     mode: '0644'
 
 - name: unzip downloaded archive
-  shell: tar xvf /tmp/nagios-4.4.5.tar.gz
+  shell: tar xvf nagios-4.4.5.tar.gz
 
 - name: preparing nagios for installation
-  shell: cd /tmp/nagios* && ./configure
+  shell: cd nagioscore-nagios-4.4.5 && ./configure
 
 - name: compile nagios core source code
-  shell: cd /tmp/nagios* && make all && make install-groups-users
+  shell: cd nagioscore-nagios-4.4.5 && make all && make install-groups-users
 
 - name: adding apache user to the nagios group
   shell: usermod -aG nagios apache
 
 - name: installing compiled binaries and necessary scripts
-  shell: cd /tmp/nagios* && make install && make install-daemoninit
+  shell: cd nagioscore-nagios-4.4.5 && make install && make install-daemoninit
 
 - name: starting and enabling httpd service
   service:
@@ -58,21 +58,21 @@
     enabled: yes
 
 - name: installing configurations for nagios
-  shell: cd /tmp/nagios* && make install-commandmode && make install-config && make install-webconf
+  shell: cd nagioscore-nagios-4.4.5 && make install-commandmode && make install-config && make install-webconf
 
 - name: downloading nagios plugins
   get_url:
     url: http://nagios-plugins.org/download/nagios-plugins-2.3.2.tar.gz
-    dest: /root/nagios-plugins-2.3.2.tar.gz
+    dest: /home/ansible/nagios-plugins-2.3.2.tar.gz
     owner: root
     group: root
     mode: '0644'
 
 - name: unzip downloaded archive
-  shell: tar xzvf /root/nagios-plugins-*.tar.gz
+  shell: tar xzvf nagios-plugins-2.3.2.tar.gz
 
 - name: configure and install nagios-plugins
-  shell: cd /root/nagios-plugins-* && ./configure && make && make install
+  shell: cd nagios-plugins-2.3.2 && ./configure && make && make install
 
 - name: configuring nagios.cfg
   template:
