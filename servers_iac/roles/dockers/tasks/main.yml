@@ -49,9 +49,14 @@
   shell: docker swarm join-token worker -q
   when: inventory_hostname == "prdx-dprimary201.ziyotek2.local"
   register: token
+  run_once: true
+
+- set_fact:
+    swarm_token: "{{ token.stdout }}"
+  run_once: true
 
 - name: setting docker workers
-  shell: docker swarm join --token "{{ token.stdout }}" 192.168.162.50:2377
+  shell: "docker swarm join --token {{ hostvars['prdx-dprimary201.ziyotek2.local']['swarm_token'] }} 192.168.162.50:2377"
   when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
 
 ## codes below for building image and running docker container
@@ -70,7 +75,7 @@
     owner: ansible
     group: project
   with_fileglob:
-    - /home/ansible/project/roles/dock1/files/*
+    - /home/ansible/project/servers_iac/roles/dockers/files/*
   when: inventory_hostname == "prdx-dworker201.ziyotek2.local" or inventory_hostname == "prdx-dworker202.ziyotek2.local"
 
 - name: building image from Dockerfile
