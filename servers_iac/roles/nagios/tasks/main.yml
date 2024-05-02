@@ -117,3 +117,8 @@
     mode: '0644'
   with_fileglob:
     - /home/ansible/project/servers_iac/roles/nagios/files/*
+
+- name: restarting nagios
+  service:
+    name: nagios
+    state: restarted
