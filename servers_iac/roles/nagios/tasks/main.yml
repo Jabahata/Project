@@ -1,0 +1,119 @@
+---
+- name: making cache
+  yum:
+    update_cache: yes
+
+- name: updating packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: installing necessary packages for monitoring
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - gcc
+    - glibc
+    - glibc-common
+    - gd
+    - gd-devel
+    - make
+    - net-snmp
+    - openssl-devel
+    - httpd
+    - php
+    - unzip
+    - wget
+    - postfix
+    - perl
+
+- name: getting nagioscore from github
+  get_url:
+    url: https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.4.5.tar.gz
+    dest: /tmp/nagios-4.4.5.tar.gz
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: unzip downloaded archive
+  shell: tar xvf /tmp/nagios-4.4.5.tar.gz
+
+- name: preparing nagios for installation
+  shell: cd /tmp/nagios* && ./configure
+
+- name: compile nagios core source code
+  shell: cd /tmp/nagios* && make all && make install-groups-users
+
+- name: adding apache user to the nagios group
+  shell: usermod -aG nagios apache
+
+- name: installing compiled binaries and necessary scripts
+  shell: cd /tmp/nagios* && make install && make install-daemoninit
+
+- name: starting and enabling httpd service
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: installing configurations for nagios
+  shell: cd /tmp/nagios* && make install-commandmode && make install-config && make install-webconf
+
+- name: downloading nagios plugins
+  get_url:
+    url: http://nagios-plugins.org/download/nagios-plugins-2.3.2.tar.gz
+    dest: /root/nagios-plugins-2.3.2.tar.gz
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: unzip downloaded archive
+  shell: tar xzvf /root/nagios-plugins-*.tar.gz
+
+- name: configure and install nagios-plugins
+  shell: cd /root/nagios-plugins-* && ./configure && make && make install
+
+- name: configuring nagios.cfg
+  template:
+    src: nagioscfg.j2
+    dest: /usr/local/nagios/etc/nagios.cfg
+    backup: yes
+
+- name: ensuring that servers directory exists
+  file:
+    path: /usr/local/nagios/etc/servers
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: configuring contacts.cfg
+  template:
+    src: contactscfg.j2
+    dest: /usr/local/nagios/etc/objects/contacts.cfg
+    backup: yes
+
+- name: setting up password for user nagiosadmin
+  shell: echo "password" | htpasswd -ci /usr/local/nagios/etc/htpasswd.users nagiosadmin
+
+- name: fixing 403 error configuring welcome.conf
+  template:
+    src: welcomeconf.j2
+    dest: /etc/httpd/conf.d/welcome.conf
+    backup: yes
+
+- name: restarting apache
+  service:
+    name: httpd
+    state: restarted
+
+- name: copying configuration files for servers
+  copy:
+    src: "{{ item }}"
+    dest: /usr/local/nagios/etc/servers/
+    owner: root
+    group: root
+    mode: '0644'
+  with_fileglob:
+    - /home/ansible/project/servers_iac/roles/nagios/files/*
